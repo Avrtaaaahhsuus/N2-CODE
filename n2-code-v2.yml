@@ -1,0 +1,31 @@
+name: N2 CODE Automation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify N2 CODE Connection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets['VCC-code-33'] }}
+          persist-credentials: false
+
+      - name: Check Repository
+        run: |
+          echo "================================"
+          echo "       N2 CODE"
+          echo "================================"
+          echo "Developer: ABDULLAH"
+          echo "Repository connection successful"
+          echo "Files:"
+          ls -la
+          echo "================================"
+          echo "Verification completed"
