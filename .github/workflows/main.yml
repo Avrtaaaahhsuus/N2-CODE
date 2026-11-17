@@ -1,0 +1,26 @@
+name: N2 CODE Automation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.N2_CODE_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "ABDULLAH"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Verify repository
+        run: |
+          echo "N2 CODE workflow is ready."
+          echo "Repository checked successfully."
