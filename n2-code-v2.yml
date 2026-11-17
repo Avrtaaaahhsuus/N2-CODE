@@ -1,31 +1,79 @@
-name: N2 CODE Automation
+
+name: N2 CODE File Manager
 
 on:
   workflow_dispatch:
+    inputs:
+      file_path:
+        description: "File path, for example src/main.js"
+        required: true
+        type: string
+      file_content:
+        description: "New file content"
+        required: true
+        type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  verify:
-    name: Verify N2 CODE Connection
+  update-file:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets['VCC-code-33'] }}
-          persist-credentials: false
+          token: ${{ secrets.VCC_CODE_33 }}
+          persist-credentials: true
 
-      - name: Check Repository
+      - name: Create or update file
+        id: update
+        env:
+          FILE_PATH: ${{ inputs.file_path }}
+          FILE_CONTENT: ${{ inputs.file_content }}
         run: |
-          echo "================================"
-          echo "       N2 CODE"
-          echo "================================"
-          echo "Developer: ABDULLAH"
-          echo "Repository connection successful"
-          echo "Files:"
-          ls -la
-          echo "================================"
-          echo "Verification completed"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["FILE_PATH"])
+
+          if path.is_absolute() or ".." in path.parts or not path.parts:
+              raise SystemExit("Invalid file path")
+
+          if ".git" in path.parts:
+              raise SystemExit("Restricted path")
+
+          path.parent.mkdir(parents=True, exist_ok=True)
+          path.write_text(os.environ["FILE_CONTENT"], encoding="utf-8")
+
+          print(f"Prepared file: {path}")
+          PY
+
+      - name: Commit and push to a new branch
+        id: commit
+        run: |
+          git config user.name "ABDULLAH"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          BRANCH="n2-code/update-${GITHUB_RUN_ID}"
+          git switch -c "$BRANCH"
+
+          git add -- "${{ inputs.file_path }}"
+
+          if git diff --cached --quiet; then
+            echo "No changes to save."
+            exit 1
+          fi
+
+          git commit -m "Update N2 CODE files"
+          git push origin "$BRANCH"
+
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Show result
+        run: |
+          echo "N2 CODE file update completed."
+          echo "Branch: ${{ steps.commit.outputs.branch }}"
+          echo "Review changes before merging."
